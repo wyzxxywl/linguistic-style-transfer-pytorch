@@ -16,7 +16,7 @@ if __name__ == "__main__":
     mconfig = ModelConfig()
     gconfig = GeneralConfig()
     weights = torch.FloatTensor(np.load(gconfig.word_embedding_path))
-    model = AdversarialVAE(inference=False, weight=weights)
+    model = AdversarialVAE(weight=weights)
     if use_cuda:
         model = model.cuda()
 
@@ -81,6 +81,6 @@ if __name__ == "__main__":
         torch.save({'content_disc': content_disc_opt.state_dict(
         ), 'style_disc': style_disc_opt.state_dict(), 'vae_and_cls': vae_and_cls_opt.state_dict()}, gconfig.model_save_path+'/opt_epoch_{epoch+1}.pt')
     # Save approximate estimate of different style embeddings after the last epoch
-    with open(gconfig.avg_style_emb_path) as f:
+    with open(gconfig.avg_style_emb_path, "wb") as f:
         pickle.dump(model.avg_style_emb, f)
     print("Training completed!!!")

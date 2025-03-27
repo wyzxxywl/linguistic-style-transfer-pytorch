@@ -89,7 +89,7 @@ class AdversarialVAE(nn.Module):
         sequences = sequences[perm_index]
         embedded_seqs = self.dropout(self.embedding(sequences))
         packed_seqs = pack_padded_sequence(
-            embedded_seqs, lengths=seq_lengths, batch_first=True)
+            embedded_seqs, lengths=seq_lengths.to("cpu"), batch_first=True)
         packed_output, (_) = self.encoder(packed_seqs)
         output, _ = pad_packed_sequence(packed_output, batch_first=True)
         sentence_emb = output[torch.arange(output.size(0)), seq_lengths-1]
@@ -255,7 +255,7 @@ class AdversarialVAE(nn.Module):
             style_emb: batch of sampled style embeddings of the input sentences,shape = (batch_size,mconfig.style_hidden_dim)
             style_labels: style labels of the corresponding input sentences,shape = (batch_size,2)
         """
-        neg_style_label = torch.LongTensor([0, 1], device=style_emb.device)
+        neg_style_label = torch.tensor([0, 1], device=style_emb.device, dtype=torch.long)
         # Iterate over the style labels
         for idx, label in enumerate(style_labels):
             # Calculate average for negative style
@@ -264,13 +264,13 @@ class AdversarialVAE(nn.Module):
                 self.num_neg_styles = self.num_neg_styles + 1
                 # Calculate a running average of the negative style embedding
                 self.avg_style_emb[0] = (
-                    (self.num_neg_styles-1) * self.avg_style_emb[0] + style_emb[idx])/self.num_neg_styles
+                    (self.num_neg_styles-1) * self.avg_style_emb[0] + style_emb.to("cpu")[idx])/self.num_neg_styles
             else:
                 # Increment the counter for positive styles
                 self.num_pos_styles = self.num_pos_styles + 1
                 # Calculate a running average of the positive style embedding
                 self.avg_style_emb[1] = (
-                    (self.num_pos_styles-1) * self.avg_style_emb[1] + style_emb[idx])/self.num_pos_styles
+                    (self.num_pos_styles-1) * self.avg_style_emb[1] + style_emb.to("cpu")[idx])/self.num_pos_styles
 
     def get_content_disc_preds(self, style_emb):
         """
@@ -423,8 +423,8 @@ class AdversarialVAE(nn.Module):
         # Training mode
         if not inference:
             # Prepend the input sentences with <sos> token
-            sos_token_tensor = torch.LongTensor(
-                [gconfig.predefined_word_index['<sos>']], device=input_sentences.device).unsqueeze(0).repeat(mconfig.batch_size, 1)
+            sos_token_tensor = torch.tensor(
+                [gconfig.predefined_word_index['<sos>']], device=input_sentences.device, dtype=torch.long).unsqueeze(0).repeat(input_sentences.shape[0], 1)
             input_sentences = torch.cat(
                 (sos_token_tensor, input_sentences), dim=1)
             sentence_embs = self.dropout(self.embedding(input_sentences))
@@ -437,10 +437,10 @@ class AdversarialVAE(nn.Module):
             # Delete latent embedding and sos token tensor to reduce memory usage
             del latent_emb, sos_token_tensor
             output_sentences = torch.zeros(
-                mconfig.max_seq_len, mconfig.batch_size, mconfig.vocab_size, device=input_sentences.device)
+                mconfig.max_seq_len, input_sentences.shape[0], mconfig.vocab_size, device=input_sentences.device)
             # initialize hidden state
             hidden_states = torch.zeros(
-                mconfig.batch_size, mconfig.hidden_dim, device=input_sentences.device)
+                input_sentences.shape[0], mconfig.hidden_dim, device=input_sentences.device)
             # generate sentences one word at a time in a loop
             for idx in range(mconfig.max_seq_len):
                 # get words at the index idx from all the batches
@@ -452,8 +452,8 @@ class AdversarialVAE(nn.Module):
         # if inference mode is on
         else:
 
-            sos_token_tensor = torch.LongTensor(
-                [gconfig.predefined_word_index['<sos>']], device=latent_emb.device).unsqueeze(0)
+            sos_token_tensor = torch.tensor(
+                [gconfig.predefined_word_index['<sos>']], device=latent_emb.device, dtype=torch.long).unsqueeze(0)
             word_emb = self.embedding(sos_token_tensor)
             hidden_states = torch.zeros(
                 1, mconfig.hidden_dim, device=latent_emb.device)

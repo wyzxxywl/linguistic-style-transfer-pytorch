@@ -4,7 +4,7 @@ import numpy as np
 import collections
 import logging
 from nltk.corpus import stopwords
-from sklearn.feature_extraction import stop_words
+from sklearn.feature_extraction import _stop_words
 from spacy.lang.en.stop_words import STOP_WORDS as spacy_stopwords
 from gensim.models import KeyedVectors
 
@@ -136,7 +136,7 @@ class Vocab:
         main vocab to form the BoW vocab
         """
         nltk_stopwords = set(stopwords.words('english'))
-        sklearn_stopwords = stop_words.ENGLISH_STOP_WORDS
+        sklearn_stopwords = _stop_words.ENGLISH_STOP_WORDS
 
         all_stopwords = set()
         # The '|' operator on sets in python acts as a union operator

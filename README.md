@@ -78,3 +78,7 @@ Illustration of training and inference.
 ## Resources
 * Original paper `Disentangled Representation Learning for Non-Parallel Text Style Transfer` [(link)](https://www.aclweb.org/anthology/P19-1041.pdf)
 * tensorflow implementation by the author [link](https://github.com/vineetjohn/linguistic-style-transfer)
+
+
+## Changes
+1. Uses python 3.8 and update some packages' versions.
